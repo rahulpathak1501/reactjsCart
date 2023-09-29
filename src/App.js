@@ -1,45 +1,78 @@
 import React, { Component } from "react";
 import Cart from "./Cart";
 import Navbar from "./Navbar";
+import firebase from "firebase/app";
 
 class App extends React.Component {
   constructor() {
     super();
     this.state = {
-      products: [
-        {
-          price: 99,
-          title: "Watch",
-          qty: 10,
-          img: "https://images.unsplash.com/photo-1542496658-e33a6d0d50f6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-          id: 1,
-        },
-        {
-          price: 999,
-          title: "Mobile Phone",
-          qty: 14,
-          img: "https://images.unsplash.com/photo-1580910051074-3eb694886505?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1530&q=80",
-          id: 2,
-        },
-        {
-          price: 9999,
-          title: "Laptop",
-          qty: 19,
-          img: "https://images.unsplash.com/photo-1531297484001-80022131f5a1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1420&q=80",
-          id: 3,
-        },
-      ],
+      products: [],
     };
+  }
+
+  componentDidMount() {
+    // firebase
+    //   .firestore()
+    //   .collection("products")
+    //   .get()
+    //   .then((snapshot) => {
+    //     //console.log(snapshot);
+    //     const products = snapshot.docs.map((doc) => {
+    //       //console.log(doc.data());
+    //       const data= doc.data();
+    //       data['id']=doc.id;
+    //       return data;
+    //     });
+    //     this.setState ({
+    //       products,
+    //     });
+    //   });
+
+    //.get() method is not able to capture what ever changes is happning in firebase in realtime.
+    //thats why we use onSnapshot() function which will update the state everytime any changes happend in firbase in real time.
+
+    firebase
+      .firestore()
+      .collection("products")
+      .onSnapshot((snapshot) => {
+        //console.log(snapshot);
+        const products = snapshot.docs.map((doc) => {
+          //console.log(doc.data());
+          const data = doc.data();
+          data["id"] = doc.id;
+          return data;
+        });
+        this.setState({
+          products,
+        });
+      });
   }
 
   handleIncrease = (product) => {
     //console.log(product);
     const { products } = this.state;
+    //console.log(products);
     const index = products.indexOf(product);
-    products[index].qty += 1;
-    this.setState({
-      products,
-    });
+    // products[index].qty += 1;
+    // this.setState({
+    //   products,
+    // });
+    const docRef = firebase
+      .firestore()
+      .collection("products")
+      .doc(products[index].id);
+
+    docRef
+      .update({
+        qty: products[index].qty + 1,
+      })
+      .then(() => {
+        console.log("updated");
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
 
   handleDecrease = (product) => {
@@ -49,10 +82,26 @@ class App extends React.Component {
     if (products[index].qty === 1) {
       return;
     }
-    products[index].qty -= 1;
-    this.setState({
-      products,
-    });
+    // products[index].qty -= 1;
+    // this.setState({
+    //   products,
+    // });
+
+    const docRef = firebase
+      .firestore()
+      .collection("products")
+      .doc(products[index].id);
+
+    docRef
+      .update({
+        qty: products[index].qty - 1,
+      })
+      .then(() => {
+        console.log("updated");
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
   handleDelete = (product) => {
     const { products } = this.state;
@@ -62,6 +111,20 @@ class App extends React.Component {
       products,
     });
     //console.log(products);
+
+    //   const docRef = firebase
+    //     .firestore()
+    //     .collection("products")
+    //     .doc(products[index].id);
+
+    //   docRef
+    //     .delete(products)
+    //     .then(() => {
+    //       console.log("deleted");
+    //     })
+    //     .catch((err) => {
+    //       console.log(err);
+    //     });
   };
 
   getCount = () => {
@@ -77,7 +140,7 @@ class App extends React.Component {
     const { products } = this.state;
     let cartTotal = 0;
     products.forEach((product) => {
-      cartTotal += product.qty*product.price;
+      cartTotal += product.qty * product.price;
     });
     return cartTotal;
   };
